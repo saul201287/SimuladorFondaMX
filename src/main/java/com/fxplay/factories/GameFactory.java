@@ -15,10 +15,10 @@ public class GameFactory {
     
     public static void crearMesas() {
         int mesasPorFila = 3;
-        int mesasPorColumna = 5;
+        int mesasPorColumna = 4;
         int espacioEntreX = 150;
         int espacioEntreY = 100;
-        int startX = 200;
+        int startX = 250;
         int startY = 0;
         
         for (int fila = 0; fila < mesasPorFila; fila++) {

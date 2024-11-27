@@ -5,6 +5,9 @@ import com.almasb.fxgl.dsl.FXGL;
 import com.fxplay.utils.GameConstants;
 
 public class Mesa {
+
+    private boolean ocupado = false;
+
     public static Entity crearMesa(double x, double y) {
         return FXGL.entityBuilder()
                 .at(x, y)
