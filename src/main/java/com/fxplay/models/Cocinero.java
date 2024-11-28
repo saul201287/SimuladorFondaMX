@@ -19,7 +19,7 @@ public class Cocinero {
         return cocineroEntity;
     }
 
-    public void cocinarCocinero() {
+    public void cocinar() {
         if (cocineroEntity == null) return;
 
         animationBuilder()
@@ -31,7 +31,7 @@ public class Cocinero {
 
         FXGL.runOnce(() -> {
             animationBuilder()
-                .delay(javafx.util.Duration.seconds(3))
+                .delay(javafx.util.Duration.seconds(5))
                 .duration(javafx.util.Duration.seconds(1))
                 .translate(cocineroEntity)
                 .from(cocineroEntity.getPosition())

@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 import com.fxplay.models.Recepcionista;
 import com.fxplay.models.Comida;
+import com.fxplay.models.Espera;
 
 public class GameFactory {
+    
     private static List<Point2D> posicionesMesas = new ArrayList<>();
 
     public static Entity crearFondo() {
@@ -33,7 +35,8 @@ public class GameFactory {
             for (int columna = 0; columna < GameConstants.MESAS_POR_COLUMNA; columna++) {
                 double x = startX + (columna * GameConstants.ESPACIO_ENTRE_X);
                 double y = startY + (fila * GameConstants.ESPACIO_ENTRE_Y);
-                Mesa.crearMesa(x, y);
+                Mesa mesa = new Mesa();
+                mesa.crearMesa(x, y);
                 posicionesMesas.add(new Point2D(x, y));
             }
         }
@@ -46,16 +49,14 @@ public class GameFactory {
         cocinero1.crearCocinero(-100, 100);
         cocinero2.crearCocinero(0, 100);
         
-        cocinero1.cocinarCocinero();
-        cocinero2.cocinarCocinero();    
+        cocinero1.cocinar();
+        cocinero2.cocinar();    
     }
 
     public static void crearMesero() {
-        Mesero.crearMesero(50, 320);
-        // Iniciar el servicio después de un pequeño retraso
-        FXGL.runOnce(() -> {
-            Mesero.iniciarServicio(posicionesMesas);
-        }, javafx.util.Duration.seconds(2));
+        Mesero mesero = new Mesero();
+        mesero.crearMesero(50, 320);
+        mesero.iniciarServicio(posicionesMesas);
     }
 
     public static void crearComensales() {
@@ -67,11 +68,18 @@ public class GameFactory {
             Entity comensalEntity = comensal.crearComensal(startX, startY);
             final int index = i;
 
+            // Crear ícono de espera para esta mesa
+            Espera espera = new Espera();
+            Point2D posicionMesa = posicionesMesas.get(index);
+            Entity esperaEntity = espera.crearEspera(posicionMesa);
+
             FXGL.runOnce(() -> {
-                Point2D posicionMesa = posicionesMesas.get(index);
-                comensal.moverAMesa(posicionMesa.getX(), posicionMesa.getY());
+                Point2D posicionMesaPoint2d = posicionesMesas.get(index);
+                comensal.moverAMesa(posicionMesaPoint2d.getX(), posicionMesaPoint2d.getY());
+                // Eliminar el ícono de espera cuando el comensal llegue
+                FXGL.runOnce(() -> espera.eliminarEspera(), 
+                    javafx.util.Duration.seconds(2));
             }, javafx.util.Duration.seconds(i * 0.5));
-            System.out.println("Comensal " + i);
         }
     }
 
