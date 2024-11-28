@@ -5,15 +5,23 @@ import com.almasb.fxgl.dsl.FXGL;
 import static com.almasb.fxgl.dsl.FXGL.animationBuilder;
 import javafx.geometry.Point2D;
 import java.util.List;
-import com.almasb.fxgl.animation.Animation;
 
 public class Mesero {
-    private static Entity meseroEntity;
-    private static boolean entregando = false;
-    private static Point2D posicionInicial;
-    private static int mesaActual = 0;
+    private Entity meseroEntity;
+    private boolean entregando = false;
+    private Point2D posicionInicial;
+    private int mesaActual = 0;
+    private static final double OFFSET_X = -50;
+    
+    // Constantes de tiempo
+    private static final double TIEMPO_MOVIMIENTO = 3.0; // 3 segundos para moverse
+    private static final double TIEMPO_ESPERA = 4.0; // 4 segundos tomando la orden
 
-    public static Entity crearMesero(double x, double y) {
+    private Point2D ajustarPosicionMesa(Point2D posicionMesa) {
+        return new Point2D(posicionMesa.getX() + OFFSET_X, posicionMesa.getY());
+    }
+
+    public Entity crearMesero(double x, double y) {
         posicionInicial = new Point2D(x, y);
         meseroEntity = FXGL.entityBuilder()
                 .at(x, y)
@@ -23,48 +31,41 @@ public class Mesero {
         return meseroEntity;
     }
 
-    public static void iniciarServicio(List<Point2D> posicionesMesas) {
+    public void iniciarServicio(List<Point2D> posicionesMesas) {
         if (meseroEntity == null || entregando) return;
         visitarSiguienteMesa(posicionesMesas);
     }
 
-    private static void visitarSiguienteMesa(List<Point2D> posicionesMesas) {
+    private void visitarSiguienteMesa(List<Point2D> posicionesMesas) {
         if (mesaActual >= posicionesMesas.size()) {
             mesaActual = 0;
             return;
         }
 
         Point2D posicionMesa = posicionesMesas.get(mesaActual);
+        Point2D posicionAjustada = ajustarPosicionMesa(posicionMesa);
         entregando = true;
 
-        // Ir a la mesa
-        Animation<?> irAMesa = animationBuilder()
-            .duration(javafx.util.Duration.seconds(1))
+        animationBuilder()
+            .duration(javafx.util.Duration.seconds(TIEMPO_MOVIMIENTO))
             .translate(meseroEntity)
             .from(meseroEntity.getPosition())
-            .to(posicionMesa)
-            .build();
-        
-        irAMesa.start();
+            .to(posicionAjustada)
+            .buildAndPlay();
 
-        // Esperar en la mesa y luego volver
         FXGL.runOnce(() -> {
-            Animation<?> volverAPosicion = animationBuilder()
-                .duration(javafx.util.Duration.seconds(1))
+            animationBuilder()
+                .duration(javafx.util.Duration.seconds(TIEMPO_MOVIMIENTO))
                 .translate(meseroEntity)
                 .from(meseroEntity.getPosition())
                 .to(posicionInicial)
-                .build();
+                .buildAndPlay();
 
-            volverAPosicion.setOnFinished(() -> {
-                entregando = false;
-                mesaActual++;
-                // Programar la siguiente visita
-                FXGL.runOnce(() -> visitarSiguienteMesa(posicionesMesas), 
-                    javafx.util.Duration.seconds(1));
-            });
+            entregando = false;
+            mesaActual++;
             
-            volverAPosicion.start();
-        }, javafx.util.Duration.seconds(2));
+            FXGL.runOnce(() -> visitarSiguienteMesa(posicionesMesas), 
+                javafx.util.Duration.seconds(TIEMPO_MOVIMIENTO));
+        }, javafx.util.Duration.seconds(TIEMPO_ESPERA));
     }
 } 

@@ -5,14 +5,19 @@ import com.almasb.fxgl.dsl.FXGL;
 import com.fxplay.utils.GameConstants;
 
 public class Mesa {
+    private Entity mesaEntity;
+    private boolean ocupado = false;
 
-    //private boolean ocupado = false;
-
-    public static Entity crearMesa(double x, double y) {
-        return FXGL.entityBuilder()
+    public Entity crearMesa(double x, double y) {
+        mesaEntity = FXGL.entityBuilder()
                 .at(x, y)
                 .viewWithBBox(FXGL.texture("mesa.png"))
                 .scale(GameConstants.MESA_SCALE, GameConstants.MESA_SCALE)
                 .buildAndAttach();
+        return mesaEntity;
+    }
+
+    public Entity getMesaEntity() {
+        return mesaEntity;
     }
 } 
