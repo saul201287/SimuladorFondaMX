@@ -3,8 +3,17 @@ package com.fxplay.factories;
 import com.almasb.fxgl.dsl.FXGL;
 import com.almasb.fxgl.entity.Entity;
 import com.fxplay.models.Mesa;
+import com.fxplay.utils.GameConstants;
+import com.fxplay.models.Cocinero;
+import com.fxplay.models.Mesero;
+import com.fxplay.models.Comensal;
+import javafx.geometry.Point2D;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GameFactory {
+    private static List<Point2D> posicionesMesas = new ArrayList<>();
+
     public static Entity crearFondo() {
         return FXGL.entityBuilder()
             .at(0, 0)
@@ -14,19 +23,51 @@ public class GameFactory {
     }
     
     public static void crearMesas() {
-        int mesasPorFila = 3;
-        int mesasPorColumna = 4;
-        int espacioEntreX = 150;
-        int espacioEntreY = 100;
-        int startX = 250;
+        int startX = 200;
         int startY = 0;
         
-        for (int fila = 0; fila < mesasPorFila; fila++) {
-            for (int columna = 0; columna < mesasPorColumna; columna++) {
-                double x = startX + (columna * espacioEntreX);
-                double y = startY + (fila * espacioEntreY);
+        for (int fila = 0; fila < GameConstants.MESAS_POR_FILA; fila++) {
+            for (int columna = 0; columna < GameConstants.MESAS_POR_COLUMNA; columna++) {
+                double x = startX + (columna * GameConstants.ESPACIO_ENTRE_X);
+                double y = startY + (fila * GameConstants.ESPACIO_ENTRE_Y);
                 Mesa.crearMesa(x, y);
+                posicionesMesas.add(new Point2D(x, y));
             }
+        }
+    }
+
+    public static void crearCocineros() {
+        Cocinero cocinero1 = new Cocinero();
+        Cocinero cocinero2 = new Cocinero();
+        
+        cocinero1.crearCocinero(-100, 100);
+        cocinero2.crearCocinero(0, 100);
+        
+        cocinero1.cocinarCocinero();
+        cocinero2.cocinarCocinero();    
+    }
+
+    public static void crearMesero() {
+        Mesero.crearMesero(50, 320);
+        // Iniciar el servicio después de un pequeño retraso
+        FXGL.runOnce(() -> {
+            Mesero.iniciarServicio(posicionesMesas);
+        }, javafx.util.Duration.seconds(2));
+    }
+
+    public static void crearComensales() {
+        double startX = 900;
+        double startY = 320;
+
+        for (int i = 0; i < 10; i++) {
+            Comensal comensal = new Comensal();
+            Entity comensalEntity = comensal.crearComensal(startX, startY);
+            final int index = i;
+
+            FXGL.runOnce(() -> {
+                Point2D posicionMesa = posicionesMesas.get(index);
+                comensal.moverAMesa(posicionMesa.getX(), posicionMesa.getY());
+            }, javafx.util.Duration.seconds(i * 0.5));
         }
     }
 } 

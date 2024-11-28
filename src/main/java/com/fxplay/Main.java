@@ -6,6 +6,7 @@ import com.fxplay.config.Config;
 import com.fxplay.factories.GameFactory;
 
 public class Main extends GameApplication {
+
     @Override
     protected void initSettings(GameSettings settings) {
         Config.configureGame(settings);
@@ -15,10 +16,12 @@ public class Main extends GameApplication {
     protected void initGame() {
         GameFactory.crearFondo();
         GameFactory.crearMesas();
+        GameFactory.crearCocineros();
+        GameFactory.crearMesero();
+        GameFactory.crearComensales();
     }
 
     public static void main(String[] args) {
         launch(args);
     }
 }
-
