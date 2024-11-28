@@ -3,6 +3,9 @@
 /home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/models/Cocinero.java
 /home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/Main.java
 /home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/factories/GameFactory.java
+/home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/models/Orden.java
 /home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/models/Mesa.java
 /home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/models/Mesero.java
+/home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/models/Recepcionista.java
+/home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/models/Comida.java
 /home/luisd/Documents/Restaurante/SimuladorFondaMX/src/main/java/com/fxplay/utils/GameConstants.java

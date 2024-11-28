@@ -6,10 +6,13 @@ import com.fxplay.models.Mesa;
 import com.fxplay.utils.GameConstants;
 import com.fxplay.models.Cocinero;
 import com.fxplay.models.Mesero;
+import com.fxplay.models.Orden;
 import com.fxplay.models.Comensal;
 import javafx.geometry.Point2D;
 import java.util.ArrayList;
 import java.util.List;
+import com.fxplay.models.Recepcionista;
+import com.fxplay.models.Comida;
 
 public class GameFactory {
     private static List<Point2D> posicionesMesas = new ArrayList<>();
@@ -68,6 +71,36 @@ public class GameFactory {
                 Point2D posicionMesa = posicionesMesas.get(index);
                 comensal.moverAMesa(posicionMesa.getX(), posicionMesa.getY());
             }, javafx.util.Duration.seconds(i * 0.5));
+            System.out.println("Comensal " + i);
         }
     }
+
+    public static void crearRecepcionista() {
+        Recepcionista recepcionista = new Recepcionista();
+        recepcionista.crearRecepcionista( 800, 320); 
+    }
+
+    public static void crearComida() {
+        double startX = -180;
+        double startY = 210;
+
+        
+        for (int fila = 0; fila < 5; fila++) {
+            double x = startX + (fila * GameConstants.COMIDA_ESPACIO_ENTRE_X);
+            Comida comida = new Comida();
+            comida.crearComida( x, startY);
+        } 
+    }
+    
+    public static void crearOrden() {
+
+        double startX = -200;
+        double startY = 50;
+        
+        for (int fila = 0; fila < 5; fila++) {
+            double y = startY + (fila * GameConstants.ORDEN_ESPACIO_ENTRE_Y);
+            Orden orden = new Orden();
+            orden.crearOrden(startX, y);
+        } 
+    }   
 } 

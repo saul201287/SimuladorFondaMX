@@ -17,8 +17,11 @@ public class Main extends GameApplication {
         GameFactory.crearFondo();
         GameFactory.crearMesas();
         GameFactory.crearCocineros();
+        GameFactory.crearRecepcionista();
         GameFactory.crearMesero();
         GameFactory.crearComensales();
+        GameFactory.crearComida();
+        GameFactory.crearOrden();
     }
 
     public static void main(String[] args) {
