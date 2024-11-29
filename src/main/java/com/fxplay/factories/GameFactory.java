@@ -16,41 +16,48 @@ import com.fxplay.models.Comida;
 import com.fxplay.models.Espera;
 
 public class GameFactory {
-    
+
     private static List<Point2D> posicionesMesas = new ArrayList<>();
+    private static List<Mesa> mesas = new ArrayList<>();
+    private static List<Comensal> comensales = new ArrayList<>();
+    private static Recepcionista recepcionista;
 
     public static Entity crearFondo() {
         return FXGL.entityBuilder()
-            .at(0, 0)
-            .viewWithBBox(FXGL.texture("fondo.png"))
-            .scale(1,1)
-            .buildAndAttach();
+                .at(0, 0)
+                .viewWithBBox(FXGL.texture("fondo.png"))
+                .scale(1, 1)
+                .buildAndAttach();
     }
-    
+
     public static void crearMesas() {
         int startX = 200;
         int startY = 0;
-        
+        int id = 1; // ID único para cada mesa
+
         for (int fila = 0; fila < GameConstants.MESAS_POR_FILA; fila++) {
             for (int columna = 0; columna < GameConstants.MESAS_POR_COLUMNA; columna++) {
                 double x = startX + (columna * GameConstants.ESPACIO_ENTRE_X);
                 double y = startY + (fila * GameConstants.ESPACIO_ENTRE_Y);
-                Mesa mesa = new Mesa();
+
+                Mesa mesa = new Mesa(id++); // Crear mesa con un ID único
                 mesa.crearMesa(x, y);
+                mesas.add(mesa); // Guardar en la lista de mesas
                 posicionesMesas.add(new Point2D(x, y));
             }
         }
+
     }
 
     public static void crearCocineros() {
         Cocinero cocinero1 = new Cocinero();
         Cocinero cocinero2 = new Cocinero();
-        
+
         cocinero1.crearCocinero(-100, 100);
         cocinero2.crearCocinero(0, 100);
-        
+
         cocinero1.cocinar();
-        cocinero2.cocinar();    
+        cocinero2.cocinar();
     }
 
     public static void crearMesero() {
@@ -59,56 +66,53 @@ public class GameFactory {
         mesero.iniciarServicio(posicionesMesas);
     }
 
+    public static void crearRecepcionista() {
+        if (mesas.isEmpty()) {
+            throw new IllegalStateException("Las mesas deben estar creadas antes de crear el recepcionista");
+        }
+
+        recepcionista = new Recepcionista(mesas); // Pasar las mesas al constructor
+        recepcionista.crearRecepcionista(800, 320);
+    }
+
     public static void crearComensales() {
+        if (recepcionista == null) {
+            throw new IllegalStateException("El recepcionista debe estar creado antes de crear comensales");
+        }
+
         double startX = 900;
         double startY = 320;
 
-        for (int i = 0; i < 10; i++) {
-            Comensal comensal = new Comensal();
+        for (int i = 0; i < 20; i++) {
+            Comensal comensal = new Comensal(recepcionista); // Pasar el recepcionista al constructor
             Entity comensalEntity = comensal.crearComensal(startX, startY);
-            final int index = i;
 
-            // Crear ícono de espera para esta mesa
-            Espera espera = new Espera();
-            Point2D posicionMesa = posicionesMesas.get(index);
-            Entity esperaEntity = espera.crearEspera(posicionMesa);
+            comensales.add(comensal); // Guardar en la lista
 
-            FXGL.runOnce(() -> {
-                Point2D posicionMesaPoint2d = posicionesMesas.get(index);
-                comensal.moverAMesa(posicionMesaPoint2d.getX(), posicionMesaPoint2d.getY());
-                // Eliminar el ícono de espera cuando el comensal llegue
-                FXGL.runOnce(() -> espera.eliminarEspera(), 
-                    javafx.util.Duration.seconds(2));
-            }, javafx.util.Duration.seconds(i * 0.5));
+            FXGL.runOnce(comensal::start, javafx.util.Duration.seconds(i * 0.5)); // Iniciar el hilo del comensal
         }
-    }
-
-    public static void crearRecepcionista() {
-        Recepcionista recepcionista = new Recepcionista();
-        recepcionista.crearRecepcionista( 800, 320); 
     }
 
     public static void crearComida() {
         double startX = -180;
         double startY = 210;
 
-        
         for (int fila = 0; fila < 5; fila++) {
             double x = startX + (fila * GameConstants.COMIDA_ESPACIO_ENTRE_X);
             Comida comida = new Comida();
-            comida.crearComida( x, startY);
-        } 
+            comida.crearComida(x, startY);
+        }
     }
-    
+
     public static void crearOrden() {
 
         double startX = -200;
         double startY = 50;
-        
+
         for (int fila = 0; fila < 5; fila++) {
             double y = startY + (fila * GameConstants.ORDEN_ESPACIO_ENTRE_Y);
             Orden orden = new Orden();
             orden.crearOrden(startX, y);
-        } 
-    }   
-} 
+        }
+    }
+}
