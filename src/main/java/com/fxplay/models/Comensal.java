@@ -2,6 +2,7 @@ package com.fxplay.models;
 
 import com.almasb.fxgl.entity.Entity;
 import com.almasb.fxgl.dsl.FXGL;
+import javafx.application.Platform;
 import javafx.geometry.Point2D;
 
 public class Comensal extends Thread {
@@ -26,25 +27,18 @@ public class Comensal extends Thread {
         return comensalEntity;
     }
 
-    @Override
-    public void run() {
-        try {
-            recepcionista.asignarMesa(this);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void moverAMesa(double mesaX, double mesaY) {
         if (comensalEntity == null)
             return;
 
-        FXGL.animationBuilder()
-                .duration(javafx.util.Duration.seconds(2))
-                .translate(comensalEntity)
-                .from(comensalEntity.getPosition())
-                .to(new Point2D(mesaX, mesaY))
-                .buildAndPlay();
+        Platform.runLater(() -> {
+            FXGL.animationBuilder()
+                    .duration(javafx.util.Duration.seconds(2))
+                    .translate(comensalEntity)
+                    .from(comensalEntity.getPosition())
+                    .to(new Point2D(mesaX, mesaY))
+                    .buildAndPlay();
+        });
 
         estaComiendo = true;
         double tiempoComida = 10 + Math.random() * 5;
@@ -52,7 +46,6 @@ public class Comensal extends Thread {
     }
 
     public void abandonarMesa() {
-        System.out.println(comensalEntity + " " + estaComiendo);
         if (comensalEntity == null || !estaComiendo)
             return;
 
@@ -62,10 +55,11 @@ public class Comensal extends Thread {
                 .duration(javafx.util.Duration.seconds(2))
                 .translate(comensalEntity)
                 .from(comensalEntity.getPosition())
-                .to(new Point2D(900, 320))
+                .to(new Point2D(900, 320)) 
                 .buildAndPlay();
+
         if (mesa != null) {
-            mesa.liberarMesa();
+            recepcionista.liberarMesa(mesa); 
         }
     }
 
@@ -75,5 +69,21 @@ public class Comensal extends Thread {
 
     public int getIdComensal() {
         return id;
+    }
+
+    @Override
+    public void run() {
+        try {
+            recepcionista.asignarMesa(this); 
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void wakeUp(String name) {
+        System.out.println("Comensal " + name + " ha sido despertado y le ha sido asignada una mesa.");
+        if (mesa != null) {
+            moverAMesa(mesa.getX(), mesa.getY());
+        }
     }
 }

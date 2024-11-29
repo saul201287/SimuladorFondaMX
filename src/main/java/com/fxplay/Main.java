@@ -42,7 +42,7 @@ public class Main extends GameApplication {
         FXGL.runOnce(() -> {
             GameFactory.crearComida();
             GameFactory.crearOrden();
-        }, javafx.util.Duration.seconds(5));
+        }, javafx.util.Duration.seconds(4.5));
     }
 
     public static void main(String[] args) {
