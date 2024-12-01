@@ -6,6 +6,7 @@ import com.fxplay.models.Mesa;
 import com.fxplay.utils.GameConstants;
 import com.fxplay.models.Cocinero;
 import com.fxplay.models.Mesero;
+import com.fxplay.models.MonitorComida;
 import com.fxplay.models.Orden;
 import com.fxplay.models.Comensal;
 import javafx.geometry.Point2D;
@@ -51,8 +52,9 @@ public class GameFactory {
     }
 
     public static void crearCocineros() {
-        Cocinero cocinero1 = new Cocinero();
-        Cocinero cocinero2 = new Cocinero();
+        MonitorComida monitor = new MonitorComida();
+        Cocinero cocinero1 = new Cocinero(monitor);
+        Cocinero cocinero2 = new Cocinero(monitor);
 
         cocinero1.crearCocinero(-100, 100);
         cocinero2.crearCocinero(0, 100);

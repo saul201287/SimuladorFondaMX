@@ -34,6 +34,7 @@ public class Mesa {
         Orden nuevaOrden = new Orden(this, id); // Crear orden para esta mesa.
         Mesero.getInstance().agregarOrden(nuevaOrden);
         notificarMesaOcupada();
+        esperarPorMesero();
         return true;
     }
 
@@ -59,7 +60,7 @@ public class Mesa {
         System.out.println("Mesa " + id + " liberada.");
         ocupado = false;
         comensalActual = null;
-        notify(); // Notificar al siguiente comensal esperando.
+        notify(); 
         recepcionista.notificarComensalEnEspera();
     }
 

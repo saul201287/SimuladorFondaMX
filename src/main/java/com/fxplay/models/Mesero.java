@@ -1,32 +1,35 @@
 package com.fxplay.models;
 
 import com.almasb.fxgl.entity.Entity;
-import com.fxplay.factories.GameFactory;
 import com.almasb.fxgl.dsl.FXGL;
-import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.util.Duration;
 import static com.almasb.fxgl.dsl.FXGL.animationBuilder;
 import com.almasb.fxgl.animation.Animation;
-import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadLocalRandom;
-import com.fxplay.utils.GameConstants;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Mesero {
+public class Mesero implements Runnable {
 
     private static Mesero instancia;
     private static Entity meseroEntity;
-    private static boolean entregando = false;
+    private static final AtomicBoolean entregando = new AtomicBoolean(false);
     private static Point2D posicionInicial;
-    private static final double TIEMPO_MOVIMIENTO = 3.0; // 3 segundos para moverse
-    private static final double TIEMPO_ESPERA = 4.0; // 4 segundos tomando la orden
-    private static Queue<Orden> ordenesPendientes = new LinkedList<>();
+    private static final double TIEMPO_MOVIMIENTO = 3.0;
+    private static final double TIEMPO_ESPERA = 4.0;
+    private static final Queue<Orden> ordenesPendientes = new ConcurrentLinkedQueue<>();
+
+    private final ExecutorService executorService;
 
     public Mesero() {
+        this.executorService = Executors.newSingleThreadExecutor();
     }
 
-    public static Mesero getInstance() {
+    public static synchronized Mesero getInstance() {
         if (instancia == null) {
             instancia = new Mesero();
         }
@@ -44,15 +47,22 @@ public class Mesero {
 
         return meseroEntity;
     }
-    
-    public synchronized void agregarOrden(Orden nuevaOrden) {
+
+    public void agregarOrden(Orden nuevaOrden) {
+        MonitorComida monitorComida = MonitorComida.getInstance();
+        monitorComida.insertarOrden(nuevaOrden);
         ordenesPendientes.add(nuevaOrden);
         System.out.println("Nueva orden agregada para la mesa " + nuevaOrden.getMesa().getIdMesa());
+
+        if (!entregando.get()) {
+            executorService.submit(this);
+        }
     }
 
-    public synchronized void tomarOrden(Mesa mesa) {
-        if (mesa == null || entregando)
+    public void tomarOrden(Mesa mesa) {
+        if (mesa == null || entregando.get()) {
             return;
+        }
 
         Orden ordenPendiente = ordenesPendientes.stream()
                 .filter(orden -> orden.getMesa().equals(mesa) && orden.getEstado() == Orden.Estado.PENDIENTE)
@@ -62,53 +72,54 @@ public class Mesero {
         if (ordenPendiente != null) {
             ordenPendiente.cambiarEstado(Orden.Estado.EN_PROCESO);
 
-            System.out.println(
-                    "Orden " + ordenPendiente.getNumeroOrden() + " para la mesa " + mesa.getIdMesa()
-                            + " ha sido tomada.");
+            System.out.println("Orden " + ordenPendiente.getNumeroOrden() +
+                    " para la mesa " + mesa.getIdMesa() + " ha sido tomada.");
 
-            if (!entregando) {
-                iniciarEntregaDeOrden();
-            }
+            // Reinsertar la orden con estado EN_PROCESO en el MonitorComida
+            MonitorComida.getInstance().insertarOrden(ordenPendiente);
         }
     }
 
-    private synchronized void iniciarEntregaDeOrden() {
-        // Verificar si hay órdenes pendientes
-        if (ordenesPendientes.isEmpty()) {
-            System.out.println("No hay órdenes pendientes.");
+    @Override
+    public void run() {
+        try {
+            while (!ordenesPendientes.isEmpty()) {
+                // Process the next order without blocking other orders
+                procesarSiguienteOrden();
+
+                // Small wait to prevent intensive loops
+                Thread.sleep(4000);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            // Return to the kitchen when no more orders
             volverCocina();
+        }
+    }
+
+    private void procesarSiguienteOrden() {
+        if (ordenesPendientes.isEmpty()) {
             return;
         }
 
-        // Si ya está entregando, no hacer nada
-        if (entregando) {
-            return;
-        }
-
-        entregando = true;
         Orden ordenActual = ordenesPendientes.poll();
         Mesa mesaActual = ordenActual.getMesa();
-        Point2D destino = new Point2D(mesaActual.getX()-30, mesaActual.getY()+30);
-        
-        // Animación de movimiento al destino
+        Point2D destino = new Point2D(mesaActual.getX() - 30, mesaActual.getY() + 30);
+
         animationBuilder()
-                .duration(Duration.seconds(TIEMPO_MOVIMIENTO-1))
+                .duration(Duration.seconds(TIEMPO_MOVIMIENTO))
                 .translate(meseroEntity)
                 .from(meseroEntity.getPosition())
                 .to(destino)
                 .buildAndPlay();
-        ordenActual.crearOrden(mesaActual.getX()-30, mesaActual.getY()); 
+
+        ordenActual.crearOrden(mesaActual.getX() - 30, mesaActual.getY());
+
         FXGL.runOnce(() -> {
             System.out.println("Mesero tomando orden en la mesa " + mesaActual.getIdMesa());
-
-            // Programar la próxima orden
-            FXGL.runOnce(() -> {
-                entregando = false;
-                iniciarEntregaDeOrden();
-            }, Duration.seconds(TIEMPO_ESPERA-1));
-        }, Duration.seconds(TIEMPO_ESPERA-1));
-
-        atenderOrden(ordenActual);
+            atenderOrden(ordenActual);
+        }, Duration.seconds(TIEMPO_ESPERA - 1));
     }
 
     private void atenderOrden(Orden ordenActual) {
@@ -138,17 +149,16 @@ public class Mesero {
                     + mesaActual.getIdMesa());
             recepcionista.liberarMesa(mesaActual);
 
-            entregando = false;
-            iniciarEntregaDeOrden();
-            double tiempoComida = 10 + Math.random() * 5;
-            FXGL.runOnce(() -> iniciarEntregaDeOrden(), javafx.util.Duration.seconds(tiempoComida));
+            if (!ordenesPendientes.isEmpty()) {
+                executorService.submit(this);
+            }
         });
 
         entrega.start();
     }
 
     public void volverCocina() {
-        System.out.println(ordenesPendientes.size());
+        System.out.println("Órdenes pendientes: " + ordenesPendientes.size());
         FXGL.runOnce(() -> {
             animationBuilder()
                     .duration(Duration.seconds(TIEMPO_MOVIMIENTO))
@@ -157,5 +167,9 @@ public class Mesero {
                     .to(posicionInicial)
                     .buildAndPlay();
         }, javafx.util.Duration.seconds(1));
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
     }
 }
