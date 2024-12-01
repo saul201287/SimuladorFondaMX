@@ -34,10 +34,11 @@ public class Orden {
                         .viewWithBBox(FXGL.texture("orden.png"))
                         .scale(0.1, 0.1)
                         .buildAndAttach();
+                estado = Estado.PENDIENTE;
             });
         }, Duration.seconds(2.5));
 
-        return ordenEntity; 
+        return ordenEntity;
     }
 
 

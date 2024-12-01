@@ -46,8 +46,6 @@ public class GameFactory {
                 mesa.crearMesa(x, y);
                 mesas.add(mesa);
                 posicionesMesas.add(new Point2D(x, y));
-                System.out.println("Creando mesa con coordenadas: x=" + mesa.getX() + ", y=" + mesa.getY());
-
             }
         }
     }

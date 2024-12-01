@@ -47,9 +47,6 @@ public class Comensal extends Thread {
         //double tiempoComida = 10 + Math.random() * 5;
         //FXGL.runOnce(() -> abandonarMesa(), javafx.util.Duration.seconds(tiempoComida));
 
-        if (mesa != null) {
-            mesa.notificarMesaOcupada();
-        }
     }
 
     public void abandonarMesa() {

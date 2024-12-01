@@ -48,51 +48,66 @@ public class Mesero {
     public synchronized void agregarOrden(Orden nuevaOrden) {
         ordenesPendientes.add(nuevaOrden);
         System.out.println("Nueva orden agregada para la mesa " + nuevaOrden.getMesa().getIdMesa());
-        if (!entregando) {
-            iniciarEntregaDeOrden();
-        }
     }
 
     public synchronized void tomarOrden(Mesa mesa) {
         if (mesa == null || entregando)
             return;
-        Orden nuevaOrden = new Orden(mesa, ordenesPendientes.size() + 1);
-        ordenesPendientes.add(nuevaOrden);
-        nuevaOrden.crearOrden(mesa.getX(), mesa.getY());
 
-        System.out.println(
-                "Orden " + nuevaOrden.getNumeroOrden() + " para la mesa " + mesa.getIdMesa() + " ha sido tomada.");
+        Orden ordenPendiente = ordenesPendientes.stream()
+                .filter(orden -> orden.getMesa().equals(mesa) && orden.getEstado() == Orden.Estado.PENDIENTE)
+                .findFirst()
+                .orElse(null);
 
-        if (!entregando) {
-            System.out.println("iniciando orden");
-            iniciarEntregaDeOrden();
+        if (ordenPendiente != null) {
+            ordenPendiente.cambiarEstado(Orden.Estado.EN_PROCESO);
+
+            System.out.println(
+                    "Orden " + ordenPendiente.getNumeroOrden() + " para la mesa " + mesa.getIdMesa()
+                            + " ha sido tomada.");
+
+            if (!entregando) {
+                iniciarEntregaDeOrden();
+            }
         }
     }
 
     private synchronized void iniciarEntregaDeOrden() {
-        System.out.println(ordenesPendientes.size());
-        if (ordenesPendientes.isEmpty() || entregando) {
-            System.out.println("No hay órdenes pendientes o el mesero ya está entregando.");
+        // Verificar si hay órdenes pendientes
+        if (ordenesPendientes.isEmpty()) {
+            System.out.println("No hay órdenes pendientes.");
+            volverCocina();
+            return;
+        }
+
+        // Si ya está entregando, no hacer nada
+        if (entregando) {
             return;
         }
 
         entregando = true;
         Orden ordenActual = ordenesPendientes.poll();
         Mesa mesaActual = ordenActual.getMesa();
-        Point2D destino = new Point2D(mesaActual.getX(), mesaActual.getY());
-
+        Point2D destino = new Point2D(mesaActual.getX()-30, mesaActual.getY()+30);
+        
+        // Animación de movimiento al destino
         animationBuilder()
-                .duration(Duration.seconds(TIEMPO_MOVIMIENTO))
+                .duration(Duration.seconds(TIEMPO_MOVIMIENTO-1))
                 .translate(meseroEntity)
                 .from(meseroEntity.getPosition())
                 .to(destino)
                 .buildAndPlay();
-
+        ordenActual.crearOrden(mesaActual.getX()-30, mesaActual.getY()); 
         FXGL.runOnce(() -> {
             System.out.println("Mesero tomando orden en la mesa " + mesaActual.getIdMesa());
-            entregando = false;
-            FXGL.runOnce(this::iniciarEntregaDeOrden, Duration.seconds(1));
-        }, Duration.seconds(TIEMPO_ESPERA));
+
+            // Programar la próxima orden
+            FXGL.runOnce(() -> {
+                entregando = false;
+                iniciarEntregaDeOrden();
+            }, Duration.seconds(TIEMPO_ESPERA-1));
+        }, Duration.seconds(TIEMPO_ESPERA-1));
+
         atenderOrden(ordenActual);
     }
 
@@ -124,6 +139,7 @@ public class Mesero {
             recepcionista.liberarMesa(mesaActual);
 
             entregando = false;
+            iniciarEntregaDeOrden();
             double tiempoComida = 10 + Math.random() * 5;
             FXGL.runOnce(() -> iniciarEntregaDeOrden(), javafx.util.Duration.seconds(tiempoComida));
         });
@@ -132,6 +148,7 @@ public class Mesero {
     }
 
     public void volverCocina() {
+        System.out.println(ordenesPendientes.size());
         FXGL.runOnce(() -> {
             animationBuilder()
                     .duration(Duration.seconds(TIEMPO_MOVIMIENTO))

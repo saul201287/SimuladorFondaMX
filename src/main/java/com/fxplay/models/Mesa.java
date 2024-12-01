@@ -2,11 +2,7 @@ package com.fxplay.models;
 
 import com.almasb.fxgl.entity.Entity;
 import com.fxplay.utils.GameConstants;
-
 import javafx.application.Platform;
-
-import java.sql.Time;
-
 import com.almasb.fxgl.dsl.FXGL;
 
 public class Mesa {
@@ -37,7 +33,7 @@ public class Mesa {
         // Crear una nueva orden y agregarla a la cola del mesero.
         Orden nuevaOrden = new Orden(this, id); // Crear orden para esta mesa.
         Mesero.getInstance().agregarOrden(nuevaOrden);
-
+        notificarMesaOcupada();
         return true;
     }
 
