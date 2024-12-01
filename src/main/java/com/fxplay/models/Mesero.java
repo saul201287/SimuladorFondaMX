@@ -13,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.management.monitor.Monitor;
+
 public class Mesero implements Runnable {
 
     private static Mesero instancia;
@@ -49,8 +51,6 @@ public class Mesero implements Runnable {
     }
 
     public void agregarOrden(Orden nuevaOrden) {
-        MonitorComida monitorComida = MonitorComida.getInstance();
-        monitorComida.insertarOrden(nuevaOrden);
         ordenesPendientes.add(nuevaOrden);
         System.out.println("Nueva orden agregada para la mesa " + nuevaOrden.getMesa().getIdMesa());
 
@@ -71,12 +71,9 @@ public class Mesero implements Runnable {
 
         if (ordenPendiente != null) {
             ordenPendiente.cambiarEstado(Orden.Estado.EN_PROCESO);
-
+            MonitorComida.getInstance().insertarOrden(ordenPendiente);
             System.out.println("Orden " + ordenPendiente.getNumeroOrden() +
                     " para la mesa " + mesa.getIdMesa() + " ha sido tomada.");
-
-            // Reinsertar la orden con estado EN_PROCESO en el MonitorComida
-            MonitorComida.getInstance().insertarOrden(ordenPendiente);
         }
     }
 
@@ -84,16 +81,12 @@ public class Mesero implements Runnable {
     public void run() {
         try {
             while (!ordenesPendientes.isEmpty()) {
-                // Process the next order without blocking other orders
                 procesarSiguienteOrden();
-
-                // Small wait to prevent intensive loops
                 Thread.sleep(4000);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            // Return to the kitchen when no more orders
             volverCocina();
         }
     }
@@ -108,7 +101,7 @@ public class Mesero implements Runnable {
         Point2D destino = new Point2D(mesaActual.getX() - 30, mesaActual.getY() + 30);
 
         animationBuilder()
-                .duration(Duration.seconds(TIEMPO_MOVIMIENTO))
+                .duration(Duration.seconds(TIEMPO_MOVIMIENTO-1))
                 .translate(meseroEntity)
                 .from(meseroEntity.getPosition())
                 .to(destino)
@@ -119,7 +112,7 @@ public class Mesero implements Runnable {
         FXGL.runOnce(() -> {
             System.out.println("Mesero tomando orden en la mesa " + mesaActual.getIdMesa());
             atenderOrden(ordenActual);
-        }, Duration.seconds(TIEMPO_ESPERA - 1));
+        }, Duration.seconds(TIEMPO_ESPERA - 2));
     }
 
     private void atenderOrden(Orden ordenActual) {
@@ -158,15 +151,16 @@ public class Mesero implements Runnable {
     }
 
     public void volverCocina() {
-        System.out.println("Órdenes pendientes: " + ordenesPendientes.size());
+        System.out.println("Órdenes pendientes: " + MonitorComida.getInstance().ordenesPendientes());
         FXGL.runOnce(() -> {
             animationBuilder()
-                    .duration(Duration.seconds(TIEMPO_MOVIMIENTO))
+                    .duration(Duration.seconds(TIEMPO_MOVIMIENTO -1))
                     .translate(meseroEntity)
                     .from(meseroEntity.getPosition())
                     .to(posicionInicial)
                     .buildAndPlay();
         }, javafx.util.Duration.seconds(1));
+        MonitorComida.getInstance().marcarMeseroTerminado();
     }
 
     public void shutdown() {

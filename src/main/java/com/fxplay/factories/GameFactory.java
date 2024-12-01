@@ -62,8 +62,6 @@ public class GameFactory {
         cocineros.add(cocinero1);
         cocineros.add(cocinero2);
 
-        cocinero1.cocinar();
-        cocinero2.cocinar();
     }
 
     public static void crearMesero() {

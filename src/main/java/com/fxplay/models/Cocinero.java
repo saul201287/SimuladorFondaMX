@@ -25,30 +25,36 @@ public class Cocinero implements Runnable {
 
     public void detener() {
         enEjecucion = false;
+        monitorComida.marcarMeseroTerminado(); // Notificar que no habrá más órdenes
     }
 
     @Override
     public void run() {
         while (enEjecucion) {
             try {
-                // Tomar una orden del monitor
-                Orden orden = monitorComida.retirarOrden();
-                if (orden != null) {
-                    System.out.println("Cocinero preparando la orden: " + orden.getNumeroOrden());
-                    cocinar();
-                    añadirPlatoAMonitor();
+                Orden orden = monitorComida.retirarOrdenParaCocinar();
+                if (orden == null) {
+                    break;
                 }
-                Thread.sleep(1000); // Esperar antes de verificar otra orden
+                if (orden.getEstado() == Orden.Estado.EN_PROCESO) {
+                    System.out.println("Cocinero preparando la orden: " + orden.getNumeroOrden());
+                    cocinar(orden);
+                }
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                break;
             }
         }
+
+        System.out.println("Cocinero ha terminado de procesar órdenes.");
     }
 
-    public void cocinar() {
+    public void cocinar(Orden orden) {
         if (cocineroEntity == null)
             return;
 
+        System.out.println("cocinando");
         animationBuilder()
                 .duration(javafx.util.Duration.seconds(1))
                 .translate(cocineroEntity)
@@ -64,16 +70,22 @@ public class Cocinero implements Runnable {
                     .to(cocineroEntity.getPosition().add(0, 200))
                     .buildAndPlay();
         }, javafx.util.Duration.seconds(1));
+
+        // Añadir plato al monitor
+        añadirPlatoAMonitor(orden);
     }
 
-    private void añadirPlatoAMonitor() {
+    private void añadirPlatoAMonitor(Orden orden) {
         if (monitorComida == null)
             return;
+
         Comida comida = new Comida();
+        comida.setOrden(orden); // Asociar la orden con el plato
+
         try {
             monitorComida.insertarPlato(comida);
-            System.out.println("Cocinero añadió un plato al monitor.");
-        } catch (InterruptedException e) {
+            System.out.println("Cocinero añadió un plato para la orden " + orden.getNumeroOrden());
+        } catch (Exception e) {
             Thread.currentThread().interrupt();
         }
     }
