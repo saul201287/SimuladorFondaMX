@@ -19,11 +19,14 @@ public class Comensal extends Thread {
     }
 
     public Entity crearComensal(double x, double y) {
-        comensalEntity = FXGL.entityBuilder()
-                .at(x, y)
-                .viewWithBBox(FXGL.texture("comensal.png"))
-                .scale(.15, .15)
-                .buildAndAttach();
+        Platform.runLater(() -> {
+            comensalEntity = FXGL.entityBuilder()
+                    .at(x, y)
+                    .viewWithBBox(FXGL.texture("comensal.png"))
+                    .scale(.15, .15)
+                    .buildAndAttach();
+        });
+
         return comensalEntity;
     }
 
@@ -41,8 +44,12 @@ public class Comensal extends Thread {
         });
 
         estaComiendo = true;
-        double tiempoComida = 10 + Math.random() * 5;
-        FXGL.runOnce(() -> abandonarMesa(), javafx.util.Duration.seconds(tiempoComida));
+        //double tiempoComida = 10 + Math.random() * 5;
+        //FXGL.runOnce(() -> abandonarMesa(), javafx.util.Duration.seconds(tiempoComida));
+
+        if (mesa != null) {
+            mesa.notificarMesaOcupada();
+        }
     }
 
     public void abandonarMesa() {
@@ -50,16 +57,17 @@ public class Comensal extends Thread {
             return;
 
         estaComiendo = false;
-
-        FXGL.animationBuilder()
-                .duration(javafx.util.Duration.seconds(2))
-                .translate(comensalEntity)
-                .from(comensalEntity.getPosition())
-                .to(new Point2D(900, 320)) 
-                .buildAndPlay();
+        Platform.runLater(() -> {
+            FXGL.animationBuilder()
+                    .duration(javafx.util.Duration.seconds(2))
+                    .translate(comensalEntity)
+                    .from(comensalEntity.getPosition())
+                    .to(new Point2D(900, 320))
+                    .buildAndPlay();
+        });
 
         if (mesa != null) {
-            recepcionista.liberarMesa(mesa); 
+            recepcionista.liberarMesa(mesa);
         }
     }
 
@@ -74,7 +82,7 @@ public class Comensal extends Thread {
     @Override
     public void run() {
         try {
-            recepcionista.asignarMesa(this); 
+            recepcionista.asignarMesa(this);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

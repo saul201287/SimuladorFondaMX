@@ -8,8 +8,8 @@ public class Espera {
 
     private Entity esperaEntity;
     private boolean esperando = true;
-    private static final double OFFSET_X = 50; // Desplazamiento a la derecha
-    private static final double OFFSET_Y = -40; // Desplazamiento hacia arriba
+    private static final double OFFSET_X = 50; 
+    private static final double OFFSET_Y = -40; 
 
     public Entity crearEspera(Point2D posicionMesa) {
         double x = posicionMesa.getX() + OFFSET_X;

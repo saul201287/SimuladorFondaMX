@@ -15,34 +15,25 @@ public class Main extends GameApplication {
 
     @Override
     protected void initGame() {
-        GameFactory.crearFondo();
-        GameFactory.crearMesas();
-        
-        // Retraso para cocineros
-        FXGL.runOnce(() -> {
-            GameFactory.crearCocineros();
-        }, javafx.util.Duration.seconds(1));
-        
-        // Retraso para recepcionista
-        FXGL.runOnce(() -> {
-            GameFactory.crearRecepcionista();
-        }, javafx.util.Duration.seconds(2));
-        
-        // Retraso para mesero
-        FXGL.runOnce(() -> {
-            GameFactory.crearMesero();
-        }, javafx.util.Duration.seconds(3));
-        
-        // Retraso para comensales
-        FXGL.runOnce(() -> {
-            GameFactory.crearComensales();
-        }, javafx.util.Duration.seconds(4));
-        
-        // Retraso para comida y órdenes
-        FXGL.runOnce(() -> {
-            GameFactory.crearComida();
-            GameFactory.crearOrden();
-        }, javafx.util.Duration.seconds(4.5));
+        GameFactory.crearFondo(); // Fondo estático, sin dependencias
+
+        // Crear el mesero primero
+        GameFactory.crearMesero();
+
+        // Crear mesas con referencia al mesero
+        GameFactory.crearMesas(GameFactory.getMesero());
+
+        // Crear recepcionista (depende de las mesas)
+        GameFactory.crearRecepcionista();
+
+        // Retraso para crear cocineros (simulación visual)
+        FXGL.runOnce(GameFactory::crearCocineros, javafx.util.Duration.seconds(1));
+
+        // Retraso para comensales (simulación de llegadas)
+        FXGL.runOnce(GameFactory::crearComensales, javafx.util.Duration.seconds(2));
+
+        // Retraso para comida (si es visual o estática)
+        FXGL.runOnce(GameFactory::crearComida, javafx.util.Duration.seconds(3));
     }
 
     public static void main(String[] args) {

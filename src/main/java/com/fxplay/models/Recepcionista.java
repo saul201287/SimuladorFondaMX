@@ -1,6 +1,9 @@
 package com.fxplay.models;
 
 import com.almasb.fxgl.entity.Entity;
+
+import javafx.application.Platform;
+
 import java.util.List;
 import java.util.Queue;
 import java.util.LinkedList;
@@ -17,11 +20,14 @@ public class Recepcionista {
     }
 
     public Entity crearRecepcionista(double x, double y) {
-        recepcionistaEntity = FXGL.entityBuilder()
-                .at(x, y)
-                .viewWithBBox(FXGL.texture("recepcionista.png"))
-                .scale(.2, .2)
-                .buildAndAttach();
+        Platform.runLater(() -> {
+            recepcionistaEntity = FXGL.entityBuilder()
+                    .at(x, y)
+                    .viewWithBBox(FXGL.texture("recepcionista.png"))
+                    .scale(.2, .2)
+                    .buildAndAttach();
+        });
+
         return recepcionistaEntity;
     }
 

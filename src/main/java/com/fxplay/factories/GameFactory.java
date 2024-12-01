@@ -21,6 +21,8 @@ public class GameFactory {
     private static List<Mesa> mesas = new ArrayList<>();
     private static List<Comensal> comensales = new ArrayList<>();
     private static Recepcionista recepcionista;
+    private static List<Cocinero> cocineros = new ArrayList<>();
+    private static Mesero mesero;
 
     public static Entity crearFondo() {
         return FXGL.entityBuilder()
@@ -30,23 +32,24 @@ public class GameFactory {
                 .buildAndAttach();
     }
 
-    public static void crearMesas() {
+    public static void crearMesas(Mesero mesero) {
         int startX = 200;
         int startY = 0;
-        int id = 1; // ID único para cada mesa
+        int id = 1;
 
         for (int fila = 0; fila < GameConstants.MESAS_POR_FILA; fila++) {
             for (int columna = 0; columna < GameConstants.MESAS_POR_COLUMNA; columna++) {
                 double x = startX + (columna * GameConstants.ESPACIO_ENTRE_X);
                 double y = startY + (fila * GameConstants.ESPACIO_ENTRE_Y);
 
-                Mesa mesa = new Mesa(id++); // Crear mesa con un ID único
+                Mesa mesa = new Mesa(id++, mesero);
                 mesa.crearMesa(x, y);
-                mesas.add(mesa); // Guardar en la lista de mesas
+                mesas.add(mesa);
                 posicionesMesas.add(new Point2D(x, y));
+                System.out.println("Creando mesa con coordenadas: x=" + mesa.getX() + ", y=" + mesa.getY());
+
             }
         }
-
     }
 
     public static void crearCocineros() {
@@ -56,14 +59,16 @@ public class GameFactory {
         cocinero1.crearCocinero(-100, 100);
         cocinero2.crearCocinero(0, 100);
 
+        cocineros.add(cocinero1);
+        cocineros.add(cocinero2);
+
         cocinero1.cocinar();
         cocinero2.cocinar();
     }
 
     public static void crearMesero() {
-        Mesero mesero = new Mesero();
+        mesero = new Mesero();
         mesero.crearMesero(50, 320);
-        mesero.iniciarServicio(posicionesMesas);
     }
 
     public static void crearRecepcionista() {
@@ -71,7 +76,7 @@ public class GameFactory {
             throw new IllegalStateException("Las mesas deben estar creadas antes de crear el recepcionista");
         }
 
-        recepcionista = new Recepcionista(mesas); // Pasar las mesas al constructor
+        recepcionista = new Recepcionista(mesas);
         recepcionista.crearRecepcionista(800, 320);
     }
 
@@ -84,12 +89,10 @@ public class GameFactory {
         double startY = 320;
 
         for (int i = 0; i < 20; i++) {
-            Comensal comensal = new Comensal(recepcionista); // Pasar el recepcionista al constructor
+            Comensal comensal = new Comensal(recepcionista);
             Entity comensalEntity = comensal.crearComensal(startX, startY);
-
-            comensales.add(comensal); // Guardar en la lista
-
-            FXGL.runOnce(comensal::start, javafx.util.Duration.seconds(i * 0.5)); // Iniciar el hilo del comensal
+            comensales.add(comensal);
+            FXGL.runOnce(comensal::start, javafx.util.Duration.seconds(i * 0.5));
         }
     }
 
@@ -104,15 +107,15 @@ public class GameFactory {
         }
     }
 
-    public static void crearOrden() {
+    public static List<Mesa> getMesas() {
+        return mesas;
+    }
 
-        double startX = -200;
-        double startY = 50;
+    public static Mesero getMesero() {
+        return mesero;
+    }
 
-        for (int fila = 0; fila < 5; fila++) {
-            double y = startY + (fila * GameConstants.ORDEN_ESPACIO_ENTRE_Y);
-            Orden orden = new Orden();
-            orden.crearOrden(startX, y);
-        }
+    public static List<Cocinero> getCocineros() {
+        return cocineros;
     }
 }
