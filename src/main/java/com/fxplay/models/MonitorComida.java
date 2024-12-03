@@ -1,154 +1,102 @@
 package com.fxplay.models;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MonitorComida {
-    private static MonitorComida instancia;
-
     private final ConcurrentLinkedQueue<Orden> ordenesPendientes = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<Comida> platosPreparados = new ConcurrentLinkedQueue<>();
+    private static final int CAPACIDAD_MAXIMA_PLATOS = 10;
 
-    private final Lock lock = new ReentrantLock();
-    private final Condition ordenesDisponibles = lock.newCondition();
-    private final Condition platosDisponibles = lock.newCondition();
+    private final Lock lock = new ReentrantLock(true); 
+    private final Condition cocineroCondition = lock.newCondition();
 
-    private static final int CAPACIDAD_MAXIMA_PLATOS = 5;
-    private static final int CAPACIDAD_MAXIMA_ORDENES = 10;
-
-    private boolean meseroTerminado = false;
-
-    public MonitorComida() {
-    }
-
-    public static synchronized MonitorComida getInstance() {
-        if (instancia == null) {
-            instancia = new MonitorComida();
-        }
-        return instancia;
-    }
-
-    public void insertarOrden(Orden orden) {
+    private boolean meseroEnCocina = false;
+    private int cocineroEsperando = 0;
+    public synchronized void insertarPlato(Comida comida) {
         lock.lock();
         try {
-            // Esperar si la cola de órdenes está llena
-            while (ordenesPendientes.size() >= CAPACIDAD_MAXIMA_ORDENES) {
-                System.out.println("Cola de órdenes llena. Esperando...");
-                ordenesDisponibles.await();
+            while (platosPreparados.size() >= CAPACIDAD_MAXIMA_PLATOS || meseroEnCocina) {
+                cocineroEsperando++;
+                try {
+                    cocineroCondition.await();
+                } finally {
+                    cocineroEsperando--;
+                }
             }
 
-            ordenesPendientes.offer(orden);
-            System.out.println("Orden insertada para mesa " + orden.getMesa().getIdMesa());
-
-            ordenesDisponibles.signal();
+            platosPreparados.offer(comida);
+            System.out.println("Plato listo para servir. Platos en cocina: " + platosPreparados.size());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            System.out.println("Interrupción al insertar plato.");
         } finally {
             lock.unlock();
         }
     }
 
-    public Orden retirarOrdenParaCocinar() {
+    public synchronized List<Orden> recogerPlatos() {
+        List<Orden> ordenesEntregadas = new ArrayList<>();
         lock.lock();
         try {
-            while (ordenesPendientes.isEmpty() && !meseroTerminado) {
-                System.out.println("No hay órdenes. Esperando...");
-                ordenesDisponibles.await();
-            }
-            if (ordenesPendientes.isEmpty() && meseroTerminado) {
-                return null;
+            meseroEnCocina = true;
+            System.out.println("Mesero recogiendo platos...");
+            System.out.println("total: " +ordenesPendientes.size());
+            while (!ordenesPendientes.isEmpty()) {
+                //System.out.println("jalando: " + ordenesPendientes.size());
+                //Comida plato = platosPreparados.poll();
+                    Orden ordenLista = ordenesPendientes.poll() ;
+                            //System.out.println(ordenLista.getNumeroOrden());
+                           // System.out.println(ordenLista + " sss");
+                    if (ordenLista != null) {
+                        ordenLista.cambiarEstado(Orden.Estado.ENTREGADA);
+                        ordenesEntregadas.add(ordenLista);
+                        System.out.println("Orden entregada: " + ordenLista.getNumeroOrden());
+                    }
             }
 
-            Orden orden = ordenesPendientes.poll();
-            ordenesDisponibles.signal();
-            return orden;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
+            if (ordenesEntregadas.isEmpty()) {
+                System.out.println("No hay platos u órdenes para recoger.");
+            }
         } finally {
+            meseroEnCocina = false;
+            cocineroCondition.signalAll();
             lock.unlock();
         }
+        return ordenesEntregadas;
     }
 
-    // Método para insertar plato preparado
-    public void insertarPlato(Comida plato) {
+    public synchronized void insertarOrden(Orden nuevaOrden) {
         lock.lock();
         try {
-            // Esperar si la cocina está llena
-            while (platosPreparados.size() >= CAPACIDAD_MAXIMA_PLATOS) {
-                System.out.println("Cocina llena. Esperando...");
-                platosDisponibles.await();
+            if (nuevaOrden != null) {
+                ordenesPendientes.offer(nuevaOrden);
+                System.out.println("Orden agregada a la cola: " + nuevaOrden.getNumeroOrden());
             }
-
-            platosPreparados.offer(plato);
-            System.out.println("Plato añadido a la cocina");
-
-            // Señalar que hay platos disponibles
-            platosDisponibles.signal();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         } finally {
             lock.unlock();
         }
     }
 
-    // Método para retirar plato preparado
-    public Comida retirarPlato() {
+    public synchronized boolean hayPlatosDisponibles() {
         lock.lock();
         try {
-            // Esperar si no hay platos disponibles
-            while (platosPreparados.isEmpty()) {
-                System.out.println("No hay platos. Esperando...");
-                platosDisponibles.await();
-            }
-
-            Comida plato = platosPreparados.poll();
-            // Liberar espacio en la cocina
-            platosDisponibles.signal();
-            return plato;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
+            return !platosPreparados.isEmpty();
         } finally {
             lock.unlock();
         }
     }
 
-    // Método para marcar que el mesero ha terminado de tomar órdenes
-    public void marcarMeseroTerminado() {
+    public synchronized int totalPendientes() {
         lock.lock();
         try {
-            meseroTerminado = true;
-            // Despertar cualquier hilo de cocinero que esté esperando
-            ordenesDisponibles.signalAll();
+            return ordenesPendientes.size();
         } finally {
             lock.unlock();
         }
-    }
-
-    // Métodos de utilidad
-    public boolean hayPlatosDisponibles() {
-        return !platosPreparados.isEmpty();
-    }
-
-    public boolean hayOrdenesPendientes() {
-        return !ordenesPendientes.isEmpty();
-    }
-
-    public int platosEnCocina() {
-        return platosPreparados.size();
-    }
-
-    public int ordenesPendientes() {
-        return ordenesPendientes.size();
-    }
-
-    public Orden obtenerOrdenParaMesa(Mesa mesa) {
-        return ordenesPendientes.stream()
-                .filter(orden -> orden.getMesa().equals(mesa) && orden.getEstado() == Orden.Estado.EN_PROCESO)
-                .findFirst()
-                .orElse(null);
     }
 }

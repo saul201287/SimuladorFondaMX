@@ -41,7 +41,7 @@ public class Recepcionista {
                 }
             }
 
-            System.out.println("Comensal " + Thread.currentThread().getName() + " no encontró mesa. Esperando...");
+            //System.out.println("Comensal " + Thread.currentThread().getName() + " no encontró mesa. Esperando...");
             colaEsperando.add(comensal);
             wait();
         }
@@ -49,7 +49,7 @@ public class Recepcionista {
 
     public synchronized void notificarComensalEnEspera() {
         if (!colaEsperando.isEmpty()) {
-            Comensal siguienteComensal = colaEsperando.poll();
+            colaEsperando.poll();
             notify();
         }
     }

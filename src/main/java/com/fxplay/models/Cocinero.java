@@ -1,17 +1,24 @@
 package com.fxplay.models;
 
 import com.almasb.fxgl.entity.Entity;
-import com.almasb.fxgl.dsl.FXGL;
+
+import javafx.geometry.Point2D;
+
 import static com.almasb.fxgl.dsl.FXGL.animationBuilder;
+import com.almasb.fxgl.dsl.FXGL;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Cocinero implements Runnable {
-    private boolean cocinando = false;
     private Entity cocineroEntity;
-    private MonitorComida monitorComida;
-    private boolean enEjecucion = true;
+    private final MonitorComida monitorComida;
+    private final ScheduledExecutorService scheduledExecutorService;
 
     public Cocinero(MonitorComida monitorComida) {
         this.monitorComida = monitorComida;
+        this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     }
 
     public Entity crearCocinero(double x, double y) {
@@ -23,70 +30,50 @@ public class Cocinero implements Runnable {
         return cocineroEntity;
     }
 
-    public void detener() {
-        enEjecucion = false;
-        monitorComida.marcarMeseroTerminado(); // Notificar que no habrá más órdenes
-    }
-
     @Override
     public void run() {
-        while (enEjecucion) {
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
-                Orden orden = monitorComida.retirarOrdenParaCocinar();
-                if (orden == null) {
-                    break;
-                }
-                if (orden.getEstado() == Orden.Estado.EN_PROCESO) {
-                    System.out.println("Cocinero preparando la orden: " + orden.getNumeroOrden());
-                    cocinar(orden);
-                }
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
+                Comida comida = new Comida();
+                cocinar();
+                monitorComida.insertarPlato(comida);
+            } catch (Exception e) {
+                System.out.println("Error en la preparación de comida: " + e.getMessage());
                 Thread.currentThread().interrupt();
-                break;
             }
-        }
-
-        System.out.println("Cocinero ha terminado de procesar órdenes.");
+        }, 0, 5, TimeUnit.SECONDS);
     }
 
-    public void cocinar(Orden orden) {
+    public synchronized void cocinar() {
         if (cocineroEntity == null)
             return;
 
-        System.out.println("cocinando");
-        animationBuilder()
+        System.out.println("Cocinando...");
+
+        Point2D currentPosition = cocineroEntity.getPosition();
+
+        var subirAnimacion = animationBuilder()
                 .duration(javafx.util.Duration.seconds(1))
                 .translate(cocineroEntity)
-                .from(cocineroEntity.getPosition())
-                .to(cocineroEntity.getPosition().subtract(0, 200))
-                .buildAndPlay();
+                .from(currentPosition)
+                .to(currentPosition.subtract(0, 150))
+                .build();
+
+        subirAnimacion.start();
 
         FXGL.runOnce(() -> {
-            animationBuilder()
+            var bajarAnimacion = animationBuilder()
                     .duration(javafx.util.Duration.seconds(1))
                     .translate(cocineroEntity)
                     .from(cocineroEntity.getPosition())
-                    .to(cocineroEntity.getPosition().add(0, 200))
-                    .buildAndPlay();
-        }, javafx.util.Duration.seconds(1));
+                    .to(currentPosition)
+                    .build();
 
-        // Añadir plato al monitor
-        añadirPlatoAMonitor(orden);
+            bajarAnimacion.start();
+        }, javafx.util.Duration.seconds(3));
     }
 
-    private void añadirPlatoAMonitor(Orden orden) {
-        if (monitorComida == null)
-            return;
-
-        Comida comida = new Comida();
-        comida.setOrden(orden); // Asociar la orden con el plato
-
-        try {
-            monitorComida.insertarPlato(comida);
-            System.out.println("Cocinero añadió un plato para la orden " + orden.getNumeroOrden());
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
-        }
+    public synchronized void detener() {
+        scheduledExecutorService.shutdown();
     }
 }

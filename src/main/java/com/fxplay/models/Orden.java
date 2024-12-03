@@ -16,7 +16,7 @@ public class Orden {
 
     private Estado estado;
     private Mesa mesa;
-    private Entity ordenEntity;
+    public Entity ordenEntity;
     private int numeroOrden;
 
     public Orden(Mesa mesa, int numeroOrden) {

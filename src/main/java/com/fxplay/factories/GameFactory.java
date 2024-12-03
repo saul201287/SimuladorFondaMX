@@ -7,14 +7,12 @@ import com.fxplay.utils.GameConstants;
 import com.fxplay.models.Cocinero;
 import com.fxplay.models.Mesero;
 import com.fxplay.models.MonitorComida;
-import com.fxplay.models.Orden;
 import com.fxplay.models.Comensal;
 import javafx.geometry.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import com.fxplay.models.Recepcionista;
 import com.fxplay.models.Comida;
-import com.fxplay.models.Espera;
 
 public class GameFactory {
 
@@ -53,14 +51,18 @@ public class GameFactory {
 
     public static void crearCocineros() {
         MonitorComida monitor = new MonitorComida();
+
         Cocinero cocinero1 = new Cocinero(monitor);
         Cocinero cocinero2 = new Cocinero(monitor);
 
         cocinero1.crearCocinero(-100, 100);
         cocinero2.crearCocinero(0, 100);
 
-        cocineros.add(cocinero1);
-        cocineros.add(cocinero2);
+        Thread hiloCocinero1 = new Thread(cocinero1);
+        Thread hiloCocinero2 = new Thread(cocinero2);
+
+        hiloCocinero1.start();
+        hiloCocinero2.start();
 
     }
 
@@ -88,7 +90,7 @@ public class GameFactory {
 
         for (int i = 0; i < 20; i++) {
             Comensal comensal = new Comensal(recepcionista);
-            Entity comensalEntity = comensal.crearComensal(startX, startY);
+            comensal.crearComensal(startX, startY);
             comensales.add(comensal);
             FXGL.runOnce(comensal::start, javafx.util.Duration.seconds(i * 0.5));
         }

@@ -45,7 +45,6 @@ public class Comensal extends Thread {
 
         estaComiendo = true;
         //double tiempoComida = 10 + Math.random() * 5;
-        //FXGL.runOnce(() -> abandonarMesa(), javafx.util.Duration.seconds(tiempoComida));
 
     }
 
@@ -86,7 +85,7 @@ public class Comensal extends Thread {
     }
 
     public void wakeUp(String name) {
-        System.out.println("Comensal " + name + " ha sido despertado y le ha sido asignada una mesa.");
+        //System.out.println("Comensal " + name + " ha sido despertado y le ha sido asignada una mesa.");
         if (mesa != null) {
             moverAMesa(mesa.getX(), mesa.getY());
         }

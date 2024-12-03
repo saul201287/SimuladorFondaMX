@@ -28,10 +28,9 @@ public class Mesa {
         }
         ocupado = true;
         comensalActual = comensal;
-        System.out.println("Comensal " + comensal.getIdComensal() + " ocupa la mesa " + id);
+        //System.out.println("Comensal " + comensal.getIdComensal() + " ocupa la mesa " + id);
 
-        // Crear una nueva orden y agregarla a la cola del mesero.
-        Orden nuevaOrden = new Orden(this, id); // Crear orden para esta mesa.
+        Orden nuevaOrden = new Orden(this, id);
         Mesero.getInstance().agregarOrden(nuevaOrden);
         notificarMesaOcupada();
         esperarPorMesero();
@@ -57,11 +56,18 @@ public class Mesa {
         if (!ocupado) {
             return;
         }
-        System.out.println("Mesa " + id + " liberada.");
-        ocupado = false;
-        comensalActual = null;
-        notify(); 
-        recepcionista.notificarComensalEnEspera();
+
+        FXGL.runOnce(() -> {
+            comensalActual.abandonarMesa();
+
+            synchronized (this) {
+                System.out.println("Mesa " + id + " liberada.");
+                ocupado = false;
+                
+                notify();
+                recepcionista.notificarComensalEnEspera();
+            }
+        }, javafx.util.Duration.seconds(3));
     }
 
     public int getIdMesa() {
